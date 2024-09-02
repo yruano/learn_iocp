@@ -8,6 +8,13 @@
 #include <mswsock.h>
 #include <windows.h>
 
+enum State {
+    STATE_ACCEPT = -1,
+    STATE_READ = 0,
+    STATE_WRITE = 1,
+    STATE_DISCONNECT = 2
+};
+
 struct IoOperation {
   virtual ~IoOperation();
 };
@@ -16,6 +23,7 @@ struct OverlappedEx : OVERLAPPED {
   IoOperation *op = nullptr;
   bool stop_event_loop = false;
   std::function<void()> callback = nullptr;
+  State operation = STATE_ACCEPT;
 };
 
 struct EventLoopMsg : IoOperation {

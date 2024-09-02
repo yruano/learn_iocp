@@ -3,6 +3,7 @@
 #include <format>
 #include <functional>
 #include <iostream>
+#include <string>
 
 #include "../defer.hpp"
 #include "../iocp/iocp.hpp"
@@ -113,6 +114,8 @@ auto main() -> int {
   };
   a->accept(listen_socket, accept_socket, fnAcceptEx);
 
+  // client가 보넨 데이터를 저장
+  auto str = std::vector<char>(100);
   // IOCP가 완료되면 로직 수행 (이벤트 루프)
   while (true) {
     auto bytes_transferred = DWORD{};
@@ -128,6 +131,27 @@ auto main() -> int {
                   << std::format("err msg: {}\n", std::system_category().message((int)err_code));
         return EXIT_FAILURE;
       }
+    }
+
+    switch (a->ov.operation) {
+      case STATE_READ: {
+        auto r = new TcpRecv{};
+        r->recv(accept_socket, str);
+        break;
+      }
+      case STATE_WRITE: {
+        auto se = new TcpSend{};
+        se->send(accept_socket, str);
+        break;
+      }
+      case STATE_ACCEPT:
+        break;
+      
+      case STATE_DISCONNECT:
+        break;
+      
+      default:
+        break;
     }
 
     // IOCP 완료됨

@@ -4,6 +4,7 @@
 #include <format>
 #include <functional>
 #include <iostream>
+#include <string>
 
 #include "../defer.hpp"
 #include "../iocp/iocp.hpp"
@@ -111,6 +112,30 @@ auto main() -> int {
                   << std::format("err msg: {}\n", std::system_category().message((int)err_code));
         return EXIT_FAILURE;
       }
+    }
+
+    switch (c->ov.operation) {
+      case STATE_READ: {
+        auto str = std::vector<char>(100);
+        auto r = new TcpRecv{};
+        r->recv(conn_socket, str);
+        break;
+      }
+      case STATE_WRITE: {
+        auto se = new TcpSend{};
+        auto str = std::string{};
+        std::getline(std::cin, str);
+        se->send(conn_socket, str);
+        break;
+      }
+      case STATE_ACCEPT:
+        break;
+      
+      case STATE_DISCONNECT:
+        break;
+      
+      default:
+        break;
     }
 
     // IOCP 완료됨

@@ -1,4 +1,3 @@
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 function(use_sanitizer target)
