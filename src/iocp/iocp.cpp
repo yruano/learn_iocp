@@ -101,7 +101,7 @@ auto TcpSend::send(SOCKET socket, std::span<const char> data) -> bool {
   ov.op = this;
   ov.operation = STATE_WRITE;
   
-  std::format("현재 상태: {}", ov.operation);
+  std::format("현재 상태: {}", static_cast<int>(ov.operation));
 
   if (::WSASend(socket, &wsa_buf, 1, &bytes_sent, 0, &ov, nullptr) != 0) {
     auto err_code = ::WSAGetLastError();
@@ -128,7 +128,7 @@ auto TcpRecv::recv(SOCKET socket, std::span<char> buf) -> bool {
   ov.op = this;
   ov.operation = STATE_WRITE;
  
-  std::format("현재 상태: {}", ov.operation);
+  std::format("현재 상태: {}", static_cast<int>(ov.operation));
   
   if (::WSARecv(socket, &wsa_buf, 1, &bytes_recv, &flags, &ov, nullptr) != 0) {
     auto err_code = ::WSAGetLastError();
