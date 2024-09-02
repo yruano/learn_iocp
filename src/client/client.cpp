@@ -113,19 +113,23 @@ auto main() -> int {
         return EXIT_FAILURE;
       }
     }
+    std::format("State : {}\n", static_cast<int>(c->ov.operation));
 
     switch (c->ov.operation) {
       case STATE_READ: {
+        std::cout << "client state Recv\n";
         auto str = std::vector<char>(100);
         auto r = new TcpRecv{};
         r->recv(conn_socket, str);
         break;
       }
       case STATE_WRITE: {
+        std::cout << "client state Send : ";
         auto se = new TcpSend{};
         auto str = std::string{};
         std::getline(std::cin, str);
         se->send(conn_socket, str);
+        std::cout << "\n";
         break;
       }
       case STATE_ACCEPT:

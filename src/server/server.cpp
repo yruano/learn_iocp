@@ -133,13 +133,16 @@ auto main() -> int {
       }
     }
 
+    std::format("State : {}\n", static_cast<int>(a->ov.operation));
     switch (a->ov.operation) {
       case STATE_READ: {
+        std::cout << "server state recv\n";
         auto r = new TcpRecv{};
         r->recv(accept_socket, str);
         break;
       }
       case STATE_WRITE: {
+        std::cout << "server state send\n";
         auto se = new TcpSend{};
         se->send(accept_socket, str);
         break;
