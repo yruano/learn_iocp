@@ -1,4 +1,0 @@
-D:/Code/fighting_game/build/clang/CMakeFiles/IOCPServer.dir
-D:/Code/fighting_game/build/clang/CMakeFiles/IOCPClient.dir
-D:/Code/fighting_game/build/clang/CMakeFiles/edit_cache.dir
-D:/Code/fighting_game/build/clang/CMakeFiles/rebuild_cache.dir
