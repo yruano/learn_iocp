@@ -1,0 +1,14 @@
+[
+{
+  "directory": "D:/Code/fighting_game/build/clang",
+  "command": "D:\\LLVM\\bin\\clang++.exe -O0 -g -Xclang -gcodeview -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -std=gnu++20 -o CMakeFiles\\IOCPServer.dir\\src\\server\\server.cpp.obj -c D:\\Code\\fighting_game\\src\\server\\server.cpp",
+  "file": "D:\\Code\\fighting_game\\src\\server\\server.cpp",
+  "output": "CMakeFiles\\IOCPServer.dir\\src\\server\\server.cpp.obj"
+},
+{
+  "directory": "D:/Code/fighting_game/build/clang",
+  "command": "D:\\LLVM\\bin\\clang++.exe -O0 -g -Xclang -gcodeview -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd -std=gnu++20 -o CMakeFiles\\IOCPClient.dir\\src\\client\\client.cpp.obj -c D:\\Code\\fighting_game\\src\\client\\client.cpp",
+  "file": "D:\\Code\\fighting_game\\src\\client\\client.cpp",
+  "output": "CMakeFiles\\IOCPClient.dir\\src\\client\\client.cpp.obj"
+}
+]

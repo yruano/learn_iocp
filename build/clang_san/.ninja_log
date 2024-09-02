@@ -1,0 +1,13 @@
+# ninja log v5
+1	2329	7449733053569265	CMakeFiles/IOCPServer.dir/src/server/server.cpp.obj	eaf3726fd6f21089
+4	2420	7449733053721243	CMakeFiles/IOCPServer.dir/src/iocp/iocp.cpp.obj	a9921064f9d25f01
+9	2456	7449733054841162	CMakeFiles/IOCPClient.dir/src/iocp/iocp.cpp.obj	7c40294c9c8635a1
+6	2495	7449733055227280	CMakeFiles/IOCPClient.dir/src/client/client.cpp.obj	bc42a6420cdccc63
+2421	2573	7449733055983013	IOCPServer.exe	1b87b67ac8e6d3e1
+2495	2632	7449733056572193	IOCPClient.exe	df541996be73bfa1
+19	2353	7449737626075753	CMakeFiles/IOCPServer.dir/src/iocp/iocp.cpp.obj	a9921064f9d25f01
+15	2476	7449737627301690	CMakeFiles/IOCPServer.dir/src/server/server.cpp.obj	eaf3726fd6f21089
+24	2484	7449737627386861	CMakeFiles/IOCPClient.dir/src/iocp/iocp.cpp.obj	7c40294c9c8635a1
+22	2486	7449737627406865	CMakeFiles/IOCPClient.dir/src/client/client.cpp.obj	bc42a6420cdccc63
+2476	2608	7449737628596057	IOCPServer.exe	1b87b67ac8e6d3e1
+2486	2620	7449737628711173	IOCPClient.exe	df541996be73bfa1

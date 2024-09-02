@@ -1,0 +1,26 @@
+[
+{
+  "directory": "D:/Code/learn_iocp/build/clang_san",
+  "command": "D:\\mingw64\\bin\\c++.exe -std=gnu++20 -o CMakeFiles\\IOCPServer.dir\\src\\server\\server.cpp.obj -c D:\\Code\\learn_iocp\\src\\server\\server.cpp",
+  "file": "D:\\Code\\learn_iocp\\src\\server\\server.cpp",
+  "output": "CMakeFiles\\IOCPServer.dir\\src\\server\\server.cpp.obj"
+},
+{
+  "directory": "D:/Code/learn_iocp/build/clang_san",
+  "command": "D:\\mingw64\\bin\\c++.exe -std=gnu++20 -o CMakeFiles\\IOCPServer.dir\\src\\iocp\\iocp.cpp.obj -c D:\\Code\\learn_iocp\\src\\iocp\\iocp.cpp",
+  "file": "D:\\Code\\learn_iocp\\src\\iocp\\iocp.cpp",
+  "output": "CMakeFiles\\IOCPServer.dir\\src\\iocp\\iocp.cpp.obj"
+},
+{
+  "directory": "D:/Code/learn_iocp/build/clang_san",
+  "command": "D:\\mingw64\\bin\\c++.exe -std=gnu++20 -o CMakeFiles\\IOCPClient.dir\\src\\client\\client.cpp.obj -c D:\\Code\\learn_iocp\\src\\client\\client.cpp",
+  "file": "D:\\Code\\learn_iocp\\src\\client\\client.cpp",
+  "output": "CMakeFiles\\IOCPClient.dir\\src\\client\\client.cpp.obj"
+},
+{
+  "directory": "D:/Code/learn_iocp/build/clang_san",
+  "command": "D:\\mingw64\\bin\\c++.exe -std=gnu++20 -o CMakeFiles\\IOCPClient.dir\\src\\iocp\\iocp.cpp.obj -c D:\\Code\\learn_iocp\\src\\iocp\\iocp.cpp",
+  "file": "D:\\Code\\learn_iocp\\src\\iocp\\iocp.cpp",
+  "output": "CMakeFiles\\IOCPClient.dir\\src\\iocp\\iocp.cpp.obj"
+}
+]
