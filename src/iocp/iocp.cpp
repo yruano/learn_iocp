@@ -13,6 +13,7 @@ EventLoopMsg::EventLoopMsg() {
 
 TcpAccept::TcpAccept() { 
   ov.op = this;
+  ov.operation = STATE_READ;
 }
 
 TcpAccept::~TcpAccept() {
@@ -39,6 +40,7 @@ auto TcpAccept::accept(SOCKET listen_socket, SOCKET accept_socket, LPFN_ACCEPTEX
 
 TcpConnect::TcpConnect() {
   ov.op = this;
+  ov.operation = STATE_READ;
 }
 
 TcpConnect::~TcpConnect() {
