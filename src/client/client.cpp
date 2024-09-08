@@ -13,6 +13,10 @@ constexpr auto ip = "127.0.0.1"; // localhost
 constexpr auto port = 3000;
 
 auto iocp_handle = HANDLE{nullptr};
+auto state = Client_State{};
+auto recv_buf = std::vector<char>(1000, 0);
+auto send_buf = std::vector<char>(1000, 0);
+auto run_client = true;
 
 auto main() -> int {
   std::cout << "client start\n";
@@ -50,9 +54,9 @@ auto main() -> int {
   ::SetConsoleCtrlHandler(
     [](DWORD signal) -> BOOL {
       if (signal == CTRL_C_EVENT) {
-        auto op = new EventLoopMsg{};
-        op->ov.stop_event_loop = true;
-        ::PostQueuedCompletionStatus(iocp_handle, 0, 0, &op->ov);
+        state = Client_State::DISCONNECT;
+        auto ovex = new OverlappedEx{};
+        ::PostQueuedCompletionStatus(iocp_handle, 0, 0, ovex);
       }
       return true;
     },
@@ -88,17 +92,12 @@ auto main() -> int {
     return EXIT_FAILURE;
   }
 
-  auto s = std::vector<char>(6);
-
   auto c = new TcpConnect{};
-  c->callback = [=, &s]() {
-    auto r = new TcpRecv{};
-    r->recv(conn_socket, s);
-  };
   c->connect(conn_socket, fnConnectEx, ip, port);
+  state = Client_State::WRITE;
 
   // IOCP가 완료되면 로직 수행 (이벤트 루프)
-  while (true) {
+  while (run_client) {
     auto bytes_transferred = DWORD{};
     auto compeletion_key = ULONG_PTR{};
     auto ov = LPOVERLAPPED{nullptr};
@@ -109,51 +108,51 @@ auto main() -> int {
         continue;
       } else {
         std::cerr << std::format("GetQueuedCompletionStatus failed: {}\n", err_code)
-                  << std::format("err msg: {}\n", std::system_category().message((int)err_code));
-        return EXIT_FAILURE;
+                  << std::format("err msg: {}\n", std::system_category().message((int)err_code)); 
+        state = Client_State::DISCONNECT;
+        auto ovex = new OverlappedEx{};
+        ::PostQueuedCompletionStatus(iocp_handle, 0, 0, ovex);
+        continue;
       }
     }
-    std::format("State : {}\n", static_cast<int>(c->ov.operation));
 
-    switch (c->ov.operation) {
-      case STATE_READ: {
-        std::cout << "client state Recv\n";
-        auto str = std::vector<char>(100);
+    switch (state) {
+      case Client_State::READ: {
+        auto str = std::vector<char>(1000);
         auto r = new TcpRecv{};
-        r->recv(conn_socket, str);
+        r->recv(conn_socket, recv_buf);
+
+        state = Client_State::WRITE;
         break;
       }
-      case STATE_WRITE: {
-        std::cout << "client state Send : ";
+      case Client_State::WRITE: {
+        if (recv_buf[0] != 0) {
+          std::cout << "server :" << recv_buf.data() << "\n";
+        }
         auto se = new TcpSend{};
         auto str = std::string{};
         std::getline(std::cin, str);
-        se->send(conn_socket, str);
-        std::cout << "\n";
+        memset(send_buf.data(), 0, send_buf.size());
+        memcpy(send_buf.data(), str.data(), str.length());
+
+        se->send(conn_socket, send_buf);
+        state = Client_State::READ;
         break;
       }
-      case STATE_ACCEPT:
+      case Client_State::CONNECT:
         break;
       
-      case STATE_DISCONNECT:
+      case Client_State::DISCONNECT:
+        closesocket(conn_socket);
+        run_client = false;
         break;
       
       default:
         break;
     }
-
     // IOCP 완료됨
     auto ovex = std::bit_cast<OverlappedEx *>(ov);
-    auto stop_event_loop = ovex->stop_event_loop;
-    if (ovex->callback) {
-      ovex->callback();
-    }
     delete ovex->op;
-
-    if (stop_event_loop) {
-      std::cout << "stop event loop\n";
-      break;
-    }
   }
 
   return EXIT_SUCCESS;

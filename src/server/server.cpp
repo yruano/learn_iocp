@@ -4,6 +4,7 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 #include "../defer.hpp"
 #include "../iocp/iocp.hpp"
@@ -17,6 +18,17 @@
 constexpr auto port = 3000;
 
 auto iocp_handle = HANDLE{nullptr};
+
+auto clients = std::unordered_map<SOCKET, Client>{};
+auto run_server = true;
+auto program_state = Program_State::RUN;
+auto accept_state = Accept_State::RUN;
+
+auto postCustomMsg(SOCKET socket, Iotype iotype) -> void {
+  auto e = new EventLoopMsg{};
+  e->ov.iotype = iotype;
+  ::PostQueuedCompletionStatus(iocp_handle, 0, std::bit_cast<ULONG_PTR>(socket), &e->ov);
+}
 
 auto main() -> int {
   std::cout << "server start\n";
@@ -54,9 +66,8 @@ auto main() -> int {
   ::SetConsoleCtrlHandler(
     [](DWORD signal) -> BOOL {
       if (signal == CTRL_C_EVENT) {
-        auto op = new EventLoopMsg{};
-        op->ov.stop_event_loop = true;
-        ::PostQueuedCompletionStatus(iocp_handle, 0, 0, &op->ov);
+        program_state = Program_State::EXIT;
+        postCustomMsg(0, Iotype::QUEUE);
       }
       return true;
     },
@@ -101,23 +112,20 @@ auto main() -> int {
   }
 
   // accept socket 생성
-  auto accept_socket = create_tcp_socket(iocp_handle);
-  if (accept_socket == INVALID_SOCKET) {
+  auto socket = create_tcp_socket(iocp_handle);
+  if (socket == INVALID_SOCKET) {
     return EXIT_FAILURE;
   }
+  clients.insert({socket, {socket}});
 
   // accept
   auto a = new TcpAccept{};
-  a->callback = [=]() {
-    auto s = new TcpSend{};
-    s->send(accept_socket, "hello");
-  };
-  a->accept(listen_socket, accept_socket, fnAcceptEx);
+  a->ov.accept_socket = socket;
+  a->accept(listen_socket, clients[socket].socket, fnAcceptEx);
+  clients[socket].state = Server_State::NONE;
 
-  // client가 보넨 데이터를 저장
-  auto str = std::vector<char>(100);
   // IOCP가 완료되면 로직 수행 (이벤트 루프)
-  while (true) {
+  while (run_server) {
     auto bytes_transferred = DWORD{};
     auto compeletion_key = ULONG_PTR{};
     auto ov = LPOVERLAPPED{nullptr};
@@ -129,46 +137,87 @@ auto main() -> int {
       } else {
         std::cerr << std::format("GetQueuedCompletionStatus failed: {}\n", err_code)
                   << std::format("err msg: {}\n", std::system_category().message((int)err_code));
-        return EXIT_FAILURE;
+        auto socket = std::bit_cast<SOCKET>(compeletion_key);
+        clients[socket].state = Server_State::DISCONNECT;
       }
     }
 
-    std::format("State : {}\n", static_cast<int>(a->ov.operation));
-    switch (a->ov.operation) {
-      case STATE_READ: {
-        std::cout << "server state recv\n";
-        auto r = new TcpRecv{};
-        r->recv(accept_socket, str);
-        break;
-      }
-      case STATE_WRITE: {
-        std::cout << "server state send\n";
-        auto se = new TcpSend{};
-        se->send(accept_socket, str);
-        break;
-      }
-      case STATE_ACCEPT:
-        break;
-      
-      case STATE_DISCONNECT:
-        break;
-      
-      default:
-        break;
-    }
-
-    // IOCP 완료됨
     auto ovex = std::bit_cast<OverlappedEx *>(ov);
-    auto stop_event_loop = ovex->stop_event_loop;
-    if (ovex->callback) {
-      ovex->callback();
-    }
-    delete ovex->op;
+    auto socket = std::bit_cast<SOCKET>(compeletion_key);
 
-    if (stop_event_loop) {
-      std::cout << "stop event loop\n";
+    std::cout << "Iotype: " << (int)ovex->iotype << "\n";
+    std::cout << "Socket: " << (int)socket << "\n";
+
+    switch (program_state) {
+    case Program_State::RUN:
+      if (ovex->iotype == Iotype::ACCPET) {
+        switch (accept_state) {
+        case Accept_State::RUN: {
+          accept_state = Accept_State::RUN;
+
+          // start client state machine
+          auto accept_socket = ovex->accept_socket;
+          clients[accept_socket].state = Server_State::READ;
+          postCustomMsg(accept_socket, Iotype::QUEUE);
+
+          // accept next client
+          auto new_socket = create_tcp_socket(iocp_handle);
+          if (new_socket == INVALID_SOCKET) {
+            return EXIT_FAILURE;
+          }
+          clients.insert({new_socket, {new_socket}});
+          auto a = new TcpAccept{};
+          a->ov.accept_socket = new_socket;
+          a->accept(listen_socket, clients[new_socket].socket, fnAcceptEx);
+          clients[new_socket].state = Server_State::NONE;
+        } break;
+        case Accept_State::EXIT:
+          break;
+        }
+      } else {
+        if (clients.contains(socket)) {
+          switch (clients[socket].state) {
+          case Server_State::NONE:
+            std::cout << "NONE\n";
+            break;
+          case Server_State::READ: {
+            std::cout << "READ\n";
+            clients[socket].state = Server_State::WRITE;
+            auto r = new TcpRecv{};
+            r->recv(clients[socket].socket, clients[socket].c_buf);
+          } break;
+          case Server_State::WRITE: {
+            std::cout << clients[socket].c_buf.data() << '\n';
+            std::cout << "WRITE\n";
+            auto se = new TcpSend{};
+            if (strcmp(clients[socket].c_buf.data(), "exit") == 0) {
+              clients[socket].state = Server_State::DISCONNECT;
+              if (!se->send(socket, clients[socket].c_buf)) {
+                clients[socket].state = Server_State::DISCONNECT;
+                postCustomMsg(socket, Iotype::QUEUE);
+              }
+            } else {
+              clients[socket].state = Server_State::READ;
+              if (!se->send(socket, clients[socket].c_buf)) {
+                clients[socket].state = Server_State::DISCONNECT;
+                postCustomMsg(socket, Iotype::QUEUE);
+              }
+            }
+          } break;
+          case Server_State::DISCONNECT:
+            std::cout << "DISCONNECT\n";
+            closesocket(socket);
+            break;
+          }
+        }
+      }
+      break;
+    case Program_State::EXIT:
+      run_server = false;
       break;
     }
+
+    delete ovex->op;
   }
 
   return EXIT_SUCCESS;

@@ -13,7 +13,7 @@ EventLoopMsg::EventLoopMsg() {
 
 TcpAccept::TcpAccept() { 
   ov.op = this;
-  ov.operation = STATE_READ;
+  ov.iotype = Iotype::ACCPET;
 }
 
 TcpAccept::~TcpAccept() {
@@ -40,17 +40,16 @@ auto TcpAccept::accept(SOCKET listen_socket, SOCKET accept_socket, LPFN_ACCEPTEX
 
 TcpConnect::TcpConnect() {
   ov.op = this;
-  ov.operation = STATE_READ;
+  ov.iotype = Iotype::CONNECT;
 }
 
 TcpConnect::~TcpConnect() {
-  std::cout << "Connect done\n";
+  // std::cout << "Connect compelete\n";
 }
 
 auto TcpConnect::connect(SOCKET socket, LPFN_CONNECTEX fnConnectEx, const char *ip, std::int16_t port) -> bool {
   ov.op = this;
   ov.callback = callback;
-  ov.operation = STATE_READ;
 
   // // resolve the server address and port
   // // https://stackoverflow.com/questions/21797913/purpose-of-linked-list-in-struct-addrinfo-in-socket-programming
@@ -89,19 +88,17 @@ auto TcpConnect::connect(SOCKET socket, LPFN_CONNECTEX fnConnectEx, const char *
 
 TcpSend::TcpSend() {
   ov.op = this;
+  ov.iotype = Iotype::SEND;
 }
 
 TcpSend::~TcpSend() {
-  std::cout << "Send done\n";
+  // std::cout << "Send done\n";
 }
 
 auto TcpSend::send(SOCKET socket, std::span<const char> data) -> bool {
   wsa_buf.buf = const_cast<char *>(data.data());
   wsa_buf.len = data.size();
   ov.op = this;
-  ov.operation = STATE_WRITE;
-  
-  std::format("현재 상태: {}", static_cast<int>(ov.operation));
 
   if (::WSASend(socket, &wsa_buf, 1, &bytes_sent, 0, &ov, nullptr) != 0) {
     auto err_code = ::WSAGetLastError();
@@ -116,19 +113,17 @@ auto TcpSend::send(SOCKET socket, std::span<const char> data) -> bool {
 
 TcpRecv::TcpRecv() {
   ov.op = this;
+  ov.iotype = Iotype::RECV;
 }
 
 TcpRecv::~TcpRecv() {
-  std::cout << "Recv done: " << wsa_buf.buf << '\n';
+  // std::cout << "Recv done: " << wsa_buf.buf << '\n';
 }
 
 auto TcpRecv::recv(SOCKET socket, std::span<char> buf) -> bool {
   wsa_buf.buf = buf.data();
   wsa_buf.len = buf.size();
   ov.op = this;
-  ov.operation = STATE_WRITE;
- 
-  std::format("현재 상태: {}", static_cast<int>(ov.operation));
   
   if (::WSARecv(socket, &wsa_buf, 1, &bytes_recv, &flags, &ov, nullptr) != 0) {
     auto err_code = ::WSAGetLastError();
@@ -181,7 +176,7 @@ auto create_tcp_socket(HANDLE iocp_handle) -> SOCKET {
   }
 
   // setup IOCP
-  if (not ::CreateIoCompletionPort(std::bit_cast<HANDLE>(socket), iocp_handle, (ULONG_PTR)0, 0)) {
+  if (not ::CreateIoCompletionPort(std::bit_cast<HANDLE>(socket), iocp_handle, std::bit_cast<ULONG_PTR>(socket), 0)) {
     auto err_code = ::GetLastError();
     std::cerr << std::format("CreateIoCompletionPort failed: {}\n", err_code)
               << std::format("err msg: {}\n", std::system_category().message((int)err_code));

@@ -8,11 +8,42 @@
 #include <mswsock.h>
 #include <windows.h>
 
-enum State {
-    STATE_ACCEPT = -1,
-    STATE_READ = 0,
-    STATE_WRITE = 1,
-    STATE_DISCONNECT = 2
+enum class Server_State {
+  NONE,
+  READ,
+  WRITE,
+  DISCONNECT,
+};
+
+enum class Program_State {
+  RUN,
+  EXIT
+};
+
+enum class Accept_State {
+  RUN,
+  EXIT
+};
+
+struct Client {
+  SOCKET socket;
+  std::vector<char> c_buf = std::vector<char>(1000, 0);
+  Server_State state;
+};
+
+enum class Client_State {
+  CONNECT,
+  READ,
+  WRITE,
+  DISCONNECT
+};
+
+enum class Iotype {
+  ACCPET,
+  CONNECT,
+  RECV,
+  SEND,
+  QUEUE
 };
 
 struct IoOperation {
@@ -23,7 +54,8 @@ struct OverlappedEx : OVERLAPPED {
   IoOperation *op = nullptr;
   bool stop_event_loop = false;
   std::function<void()> callback = nullptr;
-  State operation = STATE_ACCEPT;
+  Iotype iotype;
+  SOCKET accept_socket;
 };
 
 struct EventLoopMsg : IoOperation {
