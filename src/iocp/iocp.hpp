@@ -25,12 +25,6 @@ enum class Accept_State {
   EXIT
 };
 
-struct Client {
-  SOCKET socket;
-  std::vector<char> c_buf = std::vector<char>(1000, 0);
-  Server_State state;
-};
-
 enum class Client_State {
   CONNECT,
   READ,
@@ -44,6 +38,12 @@ enum class Iotype {
   RECV,
   SEND,
   QUEUE
+};
+
+struct Client {
+  SOCKET socket;
+  std::vector<char> c_buf = std::vector<char>(1000, 0);
+  Server_State state;
 };
 
 struct IoOperation {
@@ -115,3 +115,4 @@ auto close_iocp_handle(HANDLE iocp_handle) -> void;
 auto create_tcp_socket(HANDLE iocp_handle) -> SOCKET;
 auto load_fn_acceptex(SOCKET socket) -> LPFN_ACCEPTEX;
 auto load_fn_connectex(SOCKET socket) -> LPFN_CONNECTEX;
+auto postCustomMsg(HANDLE iocp_handle, SOCKET socket, Iotype iotype) -> void;
