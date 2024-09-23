@@ -239,6 +239,5 @@ auto load_fn_connectex(SOCKET socket) -> LPFN_CONNECTEX {
 auto postCustomMsg(HANDLE iocp_handle, SOCKET socket, Iotype iotype) -> void {
   auto e = new EventLoopMsg{};
   e->ov.iotype = iotype;
-  ::PostQueuedCompletionStatus(iocp_handle, 0, std::bit_cast<ULONG_PTR>(socket),
-                               &e->ov);
+  ::PostQueuedCompletionStatus(iocp_handle, 0, std::bit_cast<ULONG_PTR>(socket), &e->ov);
 }

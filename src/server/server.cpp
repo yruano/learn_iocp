@@ -8,6 +8,7 @@
 
 #include "../defer.hpp"
 #include "../iocp/iocp.hpp"
+#include "../iocp/server_state.hpp"
 
 // IOCP 최적화 팁
 // https://yamoe.tistory.com/421
@@ -17,13 +18,9 @@
 
 constexpr auto port = 3000;
 
-auto iocp_handle = HANDLE{nullptr};
-
-auto clients = std::unordered_map<SOCKET, Client>{};
 auto run_server = true;
 auto program_state = Program_State::RUN;
 auto accept_state = Accept_State::RUN;
-
 
 auto main() -> int {
   std::cout << "server start\n";
@@ -48,21 +45,22 @@ auto main() -> int {
     }
   });
 
+  Clients clients = {};
   // IOCP 핸들 생성
-  iocp_handle = create_iocp_handle();
-  if (iocp_handle == nullptr) {
+  clients.iocp_handle = create_iocp_handle();
+  if (clients.iocp_handle == nullptr) {
     return EXIT_FAILURE;
   }
 
   // IOCP 핸들 닫기
-  defer([=]() { close_iocp_handle(iocp_handle); });
+  defer([=]() { close_iocp_handle(clients.iocp_handle); })
 
   // ctrl-c 처리
   ::SetConsoleCtrlHandler(
       [](DWORD signal) -> BOOL {
         if (signal == CTRL_C_EVENT) {
           program_state = Program_State::EXIT;
-          postCustomMsg(iocp_handle, 0, Iotype::QUEUE);
+          postCustomMsg(clients.iocp_handle, 0, Iotype::QUEUE);
         }
         return true;
       },
@@ -70,7 +68,7 @@ auto main() -> int {
 
   // listen 소켓 생성
   // https://github.com/microsoft/Windows-classic-samples/blob/main/Samples/Win7Samples/netds/winsock/iocp/server/IocpServer.Cpp#L373
-  auto listen_socket = create_tcp_socket(iocp_handle);
+  auto listen_socket = create_tcp_socket(clients.iocp_handle);
   if (listen_socket == INVALID_SOCKET) {
     return EXIT_FAILURE;
   }
@@ -107,17 +105,17 @@ auto main() -> int {
   }
 
   // accept socket 생성
-  auto socket = create_tcp_socket(iocp_handle);
-  if (socket == INVALID_SOCKET) {
+  clients.socket = create_tcp_socket(clients.iocp_handle);
+  if (clients.socket == INVALID_SOCKET) {
     return EXIT_FAILURE;
   }
-  clients.insert({socket, {socket}});
+  clients.clients.insert({clients.socket, {clients.socket}});
 
   // accept
   auto a = new TcpAccept{};
   a->ov.accept_socket = socket;
-  a->accept(listen_socket, clients[socket].socket, fnAcceptEx);
-  clients[socket].state = Server_State::NONE;
+  a->accept(listen_socket, clients.clients[clients.socket].socket, fnAcceptEx);
+  clients.clients[clients.socket].state = Server_State::NONE;
 
   // IOCP가 완료되면 로직 수행 (이벤트 루프)
   while (run_server) {
@@ -126,8 +124,8 @@ auto main() -> int {
     auto ov = LPOVERLAPPED{nullptr};
 
     // 하나의 구조체를 만들던 아니면 클래스를 하나 만들던 하면 좋을거 같긴하군
-    if (not ::GetQueuedCompletionStatus(iocp_handle, &bytes_transferred,
-                                        &compeletion_key, &ov, INFINITE)) {
+    if (not::GetQueuedCompletionStatus(clients.iocp_handle, &bytes_transferred,
+                                       &compeletion_key, &ov, INFINITE)) {
       auto err_code = ::GetLastError();
       if (err_code == WAIT_TIMEOUT) {
         continue;
@@ -137,15 +135,15 @@ auto main() -> int {
                   << std::format("err msg: {}\n",
                                  std::system_category().message((int)err_code));
         auto socket = std::bit_cast<SOCKET>(compeletion_key);
-        clients[socket].state = Server_State::DISCONNECT;
+        clients.clients[socket].state = Server_State::DISCONNECT;
       }
     }
 
     auto ovex = std::bit_cast<OverlappedEx *>(ov);
-    auto socket = std::bit_cast<SOCKET>(compeletion_key);
+    clients.socket = std::bit_cast<SOCKET>(compeletion_key);
 
     std::cout << "Iotype: " << (int)ovex->iotype << "\n";
-    std::cout << "Socket: " << (int)socket << "\n";
+    std::cout << "Socket: " << (int)clients.socket << "\n";
 
     switch (program_state) {
     case Program_State::RUN:
@@ -156,56 +154,39 @@ auto main() -> int {
 
           // start client state machine
           auto accept_socket = ovex->accept_socket;
-          clients[accept_socket].state = Server_State::READ;
-          postCustomMsg(iocp_handle, accept_socket, Iotype::QUEUE);
+          clients.clients[clients.socket].state = Server_State::READ;
+          postCustomMsg(clients.iocp_handle, accept_socket, Iotype::QUEUE);
 
           // accept next client
-          auto new_socket = create_tcp_socket(iocp_handle);
+          auto new_socket = create_tcp_socket(clients.iocp_handle);
           if (new_socket == INVALID_SOCKET) {
             return EXIT_FAILURE;
           }
-          clients.insert({new_socket, {new_socket}});
+          clients.clients.insert({new_socket, {new_socket}});
           auto a = new TcpAccept{};
           a->ov.accept_socket = new_socket;
-          a->accept(listen_socket, clients[new_socket].socket, fnAcceptEx);
-          clients[new_socket].state = Server_State::NONE;
+          a->accept(listen_socket, clients.clients[new_socket].socket,
+                    fnAcceptEx);
+          clients.clients[clients.socket].state = Server_State::NONE;
         } break;
         case Accept_State::EXIT:
           break;
         }
       } else {
-        if (clients.contains(socket)) {
-          switch (clients[socket].state) {
+        if (clients.clients.contains(clients.socket)) {
+          switch (clients.clients[clients.socket].state) {
           case Server_State::NONE:
             std::cout << "NONE\n";
             break;
           case Server_State::READ: {
-            std::cout << "READ\n";
-            clients[socket].state = Server_State::WRITE;
-            auto r = new TcpRecv{};
-            r->recv(clients[socket].socket, clients[socket].c_buf);
+            ServerRead(clients);
           } break;
           case Server_State::WRITE: {
-            std::cout << clients[socket].c_buf.data() << '\n';
-            std::cout << "WRITE\n";
-            auto se = new TcpSend{};
-            if (strcmp(clients[socket].c_buf.data(), "exit") == 0) {
-              clients[socket].state = Server_State::DISCONNECT;
-              if (!se->send(socket, clients[socket].c_buf)) {
-                clients[socket].state = Server_State::DISCONNECT;
-                postCustomMsg(iocp_handle, socket, Iotype::QUEUE);
-              }
-            } else {
-              clients[socket].state = Server_State::READ;
-              if (!se->send(socket, clients[socket].c_buf)) {
-                clients[socket].state = Server_State::DISCONNECT;
-                postCustomMsg(iocp_handle, socket, Iotype::QUEUE);
-              }
-            }
+            ServerWrite(clients);
           } break;
           case Server_State::DISCONNECT:
             std::cout << "DISCONNECT\n";
-            closesocket(socket);
+            closesocket(clients.socket);
             break;
           }
         }

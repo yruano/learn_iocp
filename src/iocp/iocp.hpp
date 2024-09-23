@@ -8,13 +8,6 @@
 #include <mswsock.h>
 #include <windows.h>
 
-enum class Server_State {
-  NONE,
-  READ,
-  WRITE,
-  DISCONNECT,
-};
-
 enum class Program_State {
   RUN,
   EXIT
@@ -38,12 +31,6 @@ enum class Iotype {
   RECV,
   SEND,
   QUEUE
-};
-
-struct Client {
-  SOCKET socket;
-  std::vector<char> c_buf = std::vector<char>(1000, 0);
-  Server_State state;
 };
 
 struct IoOperation {
