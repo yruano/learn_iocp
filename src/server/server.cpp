@@ -113,7 +113,7 @@ auto main() -> int {
 
   // accept
   auto a = new TcpAccept{};
-  a->ov.accept_socket = socket;
+  a->ov.accept_socket = clients.socket;
   a->accept(listen_socket, clients.clients[clients.socket].socket, fnAcceptEx);
   clients.clients[clients.socket].state = Server_State::NONE;
 

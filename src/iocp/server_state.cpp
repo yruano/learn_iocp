@@ -19,13 +19,13 @@ auto ServerWrite(Clients clients) -> void {
     clients.clients[clients.socket].state = Server_State::DISCONNECT;
     if (!se->send(clients.socket, clients.clients[clients.socket].c_buf)) {
       clients.clients[clients.socket].state = Server_State::DISCONNECT;
-      postCustomMsg(clients.iocp_handle, socket, Iotype::QUEUE);
+      // postCustomMsg(clients.iocp_handle, socket, Iotype::QUEUE);
     }
   } else {
     clients.clients[clients.socket].state = Server_State::READ;
     if (!se->send(clients.socket, clients.clients[clients.socket].c_buf)) {
       clients.clients[clients.socket].state = Server_State::DISCONNECT;
-      postCustomMsg(clients.iocp_handle, socket, Iotype::QUEUE);
+      // postCustomMsg(clients.iocp_handle, socket, Iotype::QUEUE);
     }
   }
 }
