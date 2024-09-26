@@ -55,6 +55,8 @@ set(SERVER_SOURCES
   src/defer.hpp
   src/iocp/iocp.hpp
   src/iocp/iocp.cpp
+  src/iocp/server_state.hpp
+  src/iocp/server_state.cpp
 )
 
 set(CLIENT_SOURCES

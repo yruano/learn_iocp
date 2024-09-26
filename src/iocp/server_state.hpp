@@ -3,8 +3,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include <windows.h>
-
+#include "iocp.hpp"
 
 enum class Server_State {
   NONE,
@@ -15,17 +14,16 @@ enum class Server_State {
 
 struct Client {
   SOCKET socket;
-  std::vector<char> c_buf = std::vector<char>(1000, 0);
   Server_State state;
+  std::vector<char> c_buf = std::vector<char>(1000, 0);
 };
 
 struct Clients {
   HANDLE iocp_handle;
   std::unordered_map<SOCKET, Client> clients;
-  SOCKET socket;
 };
 
 // auto None() -> void;
-auto ServerRead(Clients clients) -> void;
-auto ServerWrite(Clients clients) -> void;
+auto ServerRead(Client &clients) -> void;
+auto ServerWrite(Client &clients, HANDLE iocp_handle) -> void;
 // auto ServerDisconnect() -> void;
