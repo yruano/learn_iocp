@@ -19,11 +19,23 @@ auto ServerDisconnect(Clients &clients, SOCKET socket) -> void {
   }
 }
 
-auto ServerRead(Client &client) -> void {
+auto Broadcast(Clients &clients, SOCKET sender_socket, const std::vector<char> &message) -> void {
+  for (auto &[socket, client] : clients.clients) {
+    if (socket != sender_socket) {
+      auto sender = TcpSend{};
+      if (!sender.send(socket, message)) {
+        std::cerr << "Failed to send message to socket: " << socket << "\n";
+      }
+    }
+  }
+}
+
+auto ServerRead(Client &client, Clients &clients) -> void {
   std::cout << "Server_State : READ\n";
   client.state = Server_State::WRITE;
   auto r = new TcpRecv{};
   r->recv(client.socket, client.c_buf);
+  Broadcast(clients, client.socket, client.c_buf);
 }
 
 auto ServerWrite(Client &client, HANDLE iocp_handle) -> void {
@@ -45,11 +57,12 @@ auto ServerWrite(Client &client, HANDLE iocp_handle) -> void {
 }
 
 // 클라이언트 I/O 처리 함수
-auto ServerIo(Clients &clients, SOCKET socket, DWORD bytes_transferred, LPOVERLAPPED overlapped) -> void {
+auto ServerIo(Clients &clients, SOCKET socket, DWORD bytes_transferred,
+              LPOVERLAPPED overlapped) -> void {
   auto &client = clients.clients.at(socket);
   switch (client.state) {
   case Server_State::READ:
-    ServerRead(client);
+    ServerRead(client, clients);
     break;
   case Server_State::WRITE:
     ServerWrite(client, clients.iocp_handle);

@@ -24,7 +24,8 @@ struct Clients {
 };
 
 auto AddClient(Clients& clients, SOCKET socket) -> void;
-auto ServerRead(Client &clients) -> void;
-auto ServerWrite(Client &clients, HANDLE iocp_handle) -> void;
+auto Broadcast(Clients &clients, SOCKET sender_socket, const std::vector<char> &message) -> void;
+auto ServerRead(Client &client, Clients &clients) -> void;
+auto ServerWrite(Client &client, HANDLE iocp_handle) -> void;
 auto ServerDisconnect(Client& client, SOCKET socket) -> void;
 auto ServerIo(Clients &clients, SOCKET socket, DWORD bytes_transferred, LPOVERLAPPED overlapped) -> void;
