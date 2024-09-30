@@ -4,10 +4,7 @@
 
 // 클라이언트 추가 함수
 auto AddClient(Clients &clients, SOCKET socket) -> void {
-  Client new_client;
-  new_client.socket = socket;
-  new_client.state = Server_State::READ;
-  clients.clients.insert({socket, new_client});
+  clients.clients.insert({socket, {socket, Server_State::READ}});
 }
 
 // 클라이언트 제거 함수

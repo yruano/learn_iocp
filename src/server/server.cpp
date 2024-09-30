@@ -136,7 +136,8 @@ auto main() -> int {
 
     auto ovex = std::bit_cast<OverlappedEx *>(ov);
     auto socket = std::bit_cast<SOCKET>(compeletion_key);
-
+    
+    std::cout << "ovex->accept_socket : " << (int)ovex->accept_socket << "\n";
     std::cout << "Iotype: " << (int)ovex->iotype << "\n";
     std::cout << "Socket: " << (int)socket << "\n";
 
