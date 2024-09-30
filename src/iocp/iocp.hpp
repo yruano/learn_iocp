@@ -18,13 +18,6 @@ enum class Accept_State {
   EXIT
 };
 
-enum class Client_State {
-  CONNECT,
-  READ,
-  WRITE,
-  DISCONNECT
-};
-
 enum class Iotype {
   ACCPET,
   CONNECT,

@@ -23,7 +23,8 @@ struct Clients {
   std::unordered_map<SOCKET, Client> clients;
 };
 
-// auto None() -> void;
+auto AddClient(Clients& clients, SOCKET socket) -> void;
 auto ServerRead(Client &clients) -> void;
 auto ServerWrite(Client &clients, HANDLE iocp_handle) -> void;
-// auto ServerDisconnect() -> void;
+auto ServerDisconnect(Client& client, SOCKET socket) -> void;
+auto ServerIo(Clients &clients, SOCKET socket, DWORD bytes_transferred, LPOVERLAPPED overlapped) -> void;

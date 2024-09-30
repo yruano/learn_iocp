@@ -189,8 +189,8 @@ auto create_tcp_socket(HANDLE iocp_handle) -> SOCKET {
   }
 
   // setup IOCP
-  if (not ::CreateIoCompletionPort(std::bit_cast<HANDLE>(socket), iocp_handle,
-                                   std::bit_cast<ULONG_PTR>(socket), 0)) {
+  if (not::CreateIoCompletionPort(std::bit_cast<HANDLE>(socket), iocp_handle,
+                                  std::bit_cast<ULONG_PTR>(socket), 0)) {
     auto err_code = ::GetLastError();
     std::cerr << std::format("CreateIoCompletionPort failed: {}\n", err_code)
               << std::format("err msg: {}\n",
@@ -239,5 +239,6 @@ auto load_fn_connectex(SOCKET socket) -> LPFN_CONNECTEX {
 auto postCustomMsg(HANDLE iocp_handle, SOCKET socket, Iotype iotype) -> void {
   auto e = new EventLoopMsg{};
   e->ov.iotype = iotype;
-  ::PostQueuedCompletionStatus(iocp_handle, 0, std::bit_cast<ULONG_PTR>(socket), &e->ov);
+  ::PostQueuedCompletionStatus(iocp_handle, 0, std::bit_cast<ULONG_PTR>(socket),
+                               &e->ov);
 }

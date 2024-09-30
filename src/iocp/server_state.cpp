@@ -2,6 +2,23 @@
 
 #include <iostream>
 
+// 클라이언트 추가 함수
+auto AddClient(Clients &clients, SOCKET socket) -> void {
+  Client new_client;
+  new_client.socket = socket;
+  new_client.state = Server_State::READ;
+  clients.clients.insert({socket, new_client});
+}
+
+// 클라이언트 제거 함수
+auto ServerDisconnect(Clients &clients, SOCKET socket) -> void {
+  auto it = clients.clients.find(socket);
+  if (it != clients.clients.end()) {
+    ::closesocket(it->first);
+    clients.clients.erase(it);
+  }
+}
+
 auto ServerRead(Client &client) -> void {
   std::cout << "Server_State : READ\n";
   client.state = Server_State::WRITE;
@@ -24,5 +41,23 @@ auto ServerWrite(Client &client, HANDLE iocp_handle) -> void {
       client.state = Server_State::DISCONNECT;
       postCustomMsg(iocp_handle, client.socket, Iotype::QUEUE);
     }
+  }
+}
+
+// 클라이언트 I/O 처리 함수
+auto ServerIo(Clients &clients, SOCKET socket, DWORD bytes_transferred, LPOVERLAPPED overlapped) -> void {
+  auto &client = clients.clients.at(socket);
+  switch (client.state) {
+  case Server_State::READ:
+    ServerRead(client);
+    break;
+  case Server_State::WRITE:
+    ServerWrite(client, clients.iocp_handle);
+    break;
+  case Server_State::DISCONNECT:
+    ServerDisconnect(clients, socket);
+    break;
+  default:
+    break;
   }
 }

@@ -57,6 +57,8 @@ set(SERVER_SOURCES
   src/iocp/iocp.cpp
   src/iocp/server_state.hpp
   src/iocp/server_state.cpp
+  src/iocp/accept_manager.hpp
+  src/iocp/accept_manager.cpp
 )
 
 set(CLIENT_SOURCES
@@ -64,6 +66,8 @@ set(CLIENT_SOURCES
   src/defer.hpp 
   src/iocp/iocp.hpp
   src/iocp/iocp.cpp
+  src/iocp/client_state.hpp
+  src/iocp/client_state.cpp
 )
 
 # 서버 실행 파일 생성

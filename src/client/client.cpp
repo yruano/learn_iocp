@@ -1,25 +1,22 @@
 #include <cstdlib>
-#include <span>
-#include <vector>
 #include <format>
-#include <functional>
 #include <iostream>
-#include <string>
 
 #include "../defer.hpp"
 #include "../iocp/iocp.hpp"
+#include "../iocp/client_state.hpp"
 
 constexpr auto ip = "127.0.0.1"; // localhost
 constexpr auto port = 3000;
 
-auto iocp_handle = HANDLE{nullptr};
-auto state = Client_State{};
-auto recv_buf = std::vector<char>(1000, 0);
-auto send_buf = std::vector<char>(1000, 0);
 auto run_client = true;
+auto state = Client_State{};
+auto iocp_handle = HANDLE{nullptr};
 
 auto main() -> int {
   std::cout << "client start\n";
+  
+  auto client = Client{};
 
   // WSA 초기화
   auto wsa_data = WSADATA{};
@@ -63,18 +60,18 @@ auto main() -> int {
     true);
 
   // 접속 소켓 생성
-  auto conn_socket = create_tcp_socket(iocp_handle);
-  if (conn_socket == INVALID_SOCKET) {
+  client.socket = create_tcp_socket(iocp_handle);
+  if (client.socket == INVALID_SOCKET) {
     return EXIT_FAILURE;
   }
 
   // 접속 소켓 닫기
   defer([=]() {
-    ::closesocket(conn_socket);
+    ::closesocket(client.socket);
   });
 
   // ConnectEx 함수 포인터 불러오기
-  auto fnConnectEx = load_fn_connectex(conn_socket);
+  auto fnConnectEx = load_fn_connectex(client.socket);
   if (fnConnectEx == nullptr) {
     return EXIT_FAILURE;
   }
@@ -85,7 +82,7 @@ auto main() -> int {
   addr.sin_addr.S_un.S_addr = ::htonl(INADDR_ANY);
   addr.sin_port = ::htons(0);
 
-  if (::bind(conn_socket, (SOCKADDR *)&addr, sizeof(addr)) != 0) {
+  if (::bind(client.socket, (SOCKADDR *)&addr, sizeof(addr)) != 0) {
     auto err_code = ::WSAGetLastError();
     std::cerr << std::format("socket bind failed: {}\n", err_code)
               << std::format("err msg: {}\n", std::system_category().message((int)err_code));
@@ -93,7 +90,7 @@ auto main() -> int {
   }
 
   auto c = new TcpConnect{};
-  c->connect(conn_socket, fnConnectEx, ip, port);
+  c->connect(client.socket, fnConnectEx, ip, port);
   state = Client_State::WRITE;
 
   // IOCP가 완료되면 로직 수행 (이벤트 루프)
@@ -118,32 +115,18 @@ auto main() -> int {
 
     switch (state) {
       case Client_State::READ: {
-        auto str = std::vector<char>(1000);
-        auto r = new TcpRecv{};
-        r->recv(conn_socket, recv_buf);
-
-        state = Client_State::WRITE;
+        ClientRead(client, state);
         break;
       }
       case Client_State::WRITE: {
-        if (recv_buf[0] != 0) {
-          std::cout << "server :" << recv_buf.data() << "\n";
-        }
-        auto se = new TcpSend{};
-        auto str = std::string{};
-        std::getline(std::cin, str);
-        memset(send_buf.data(), 0, send_buf.size());
-        memcpy(send_buf.data(), str.data(), str.length());
-
-        se->send(conn_socket, send_buf);
-        state = Client_State::READ;
+        ClientWrite(client, state);
         break;
       }
       case Client_State::CONNECT:
         break;
       
       case Client_State::DISCONNECT:
-        closesocket(conn_socket);
+        closesocket(client.socket);
         run_client = false;
         break;
       
