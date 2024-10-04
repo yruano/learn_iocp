@@ -137,14 +137,13 @@ auto main() -> int {
     auto ovex = std::bit_cast<OverlappedEx *>(ov);
     auto socket = std::bit_cast<SOCKET>(compeletion_key);
     
-    std::cout << "ovex->accept_socket : " << (int)ovex->accept_socket << "\n";
     std::cout << "Iotype: " << (int)ovex->iotype << "\n";
     std::cout << "Socket: " << (int)socket << "\n";
 
     switch (program_state) {
     case Program_State::RUN:
       if (ovex->iotype == Iotype::ACCPET) {
-        AddClient(clients, ovex->accept_socket);
+        AddClient(clients, socket);
         accept_manager.handle_accept(bytes_transferred, ov);
       } else {
         ServerIo(clients, socket, bytes_transferred, ov);

@@ -18,10 +18,13 @@ auto ServerDisconnect(Clients &clients, SOCKET socket) -> void {
 
 auto Broadcast(Clients &clients, SOCKET sender_socket, const std::vector<char> &message) -> void {
   for (auto &[socket, client] : clients.clients) {
-    if (socket != sender_socket) {
+    if (client.socket != sender_socket) {
+      std::cout << "wow" << "\n";
       auto sender = TcpSend{};
-      if (!sender.send(socket, message)) {
+      if (!sender.send(client.socket, message)) {
         std::cerr << "Failed to send message to socket: " << socket << "\n";
+      } else {
+        std::cout << "보내기 성공" << "\n";
       }
     }
   }
@@ -54,9 +57,8 @@ auto ServerWrite(Client &client, HANDLE iocp_handle) -> void {
 }
 
 // 클라이언트 I/O 처리 함수
-auto ServerIo(Clients &clients, SOCKET socket, DWORD bytes_transferred,
-              LPOVERLAPPED overlapped) -> void {
-  auto &client = clients.clients.at(socket);
+auto ServerIo(Clients &clients, SOCKET socket, DWORD bytes_transferred, LPOVERLAPPED overlapped) -> void {
+  auto &client = clients.clients[socket];
   switch (client.state) {
   case Server_State::READ:
     ServerRead(client, clients);
