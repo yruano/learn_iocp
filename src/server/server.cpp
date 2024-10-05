@@ -29,8 +29,7 @@ auto main() -> int {
   auto startup_result = ::WSAStartup(MAKEWORD(2, 2), &wsa_data);
   if (startup_result != 0) {
     std::cerr << std::format("WSAStartup failed: {}\n", startup_result)
-              << std::format("err msg: {}\n", std::system_category().message(
-                                                  (int)startup_result));
+              << std::format("err msg: {}\n", std::system_category().message((int)startup_result));
   }
 
   // WSA 초기화 해제
@@ -39,8 +38,7 @@ auto main() -> int {
     auto cleanup_result = ::WSACleanup();
     if (cleanup_result != 0) {
       std::cerr << std::format("WSACleanup failed: {}\n", cleanup_result)
-                << std::format("err msg: {}\n", std::system_category().message(
-                                                    (int)cleanup_result));
+                << std::format("err msg: {}\n", std::system_category().message((int)cleanup_result));
     }
   });
 
@@ -53,19 +51,20 @@ auto main() -> int {
   }
 
   // IOCP 핸들 닫기
-  defer([=]() { close_iocp_handle(clients.iocp_handle); })
+  defer([=]() {
+    close_iocp_handle(clients.iocp_handle);
+  })
 
-      // ctrl-c 처리
-      ::SetConsoleCtrlHandler(
-          [](DWORD signal) -> BOOL {
-            if (signal == CTRL_C_EVENT) {
-              program_state = Program_State::EXIT;
-              postCustomMsg(*(HANDLE *)pointer_map.at("iocp_handle"), 0,
-                            Iotype::QUEUE);
-            }
-            return true;
-          },
-          true);
+    // ctrl-c 처리
+    ::SetConsoleCtrlHandler(
+      [](DWORD signal) -> BOOL {
+        if (signal == CTRL_C_EVENT) {
+          program_state = Program_State::EXIT;
+          postCustomMsg(*(HANDLE *)pointer_map.at("iocp_handle"), 0, Iotype::QUEUE);
+        }
+        return true;
+      },
+      true);
 
   // listen 소켓 생성
   // https://github.com/microsoft/Windows-classic-samples/blob/main/Samples/Win7Samples/netds/winsock/iocp/server/IocpServer.Cpp#L373
@@ -75,7 +74,9 @@ auto main() -> int {
   }
 
   // listen 소켓 닫기
-  defer([=]() { ::closesocket(listen_socket); });
+  defer([=]() {
+    ::closesocket(listen_socket);
+  });
 
   auto fnAcceptEx = load_fn_acceptex(listen_socket);
   if (fnAcceptEx == nullptr) {
@@ -91,8 +92,7 @@ auto main() -> int {
   if (::bind(listen_socket, (SOCKADDR *)&addr, sizeof(addr)) != 0) {
     auto err_code = ::WSAGetLastError();
     std::cerr << std::format("socket bind failed: {}\n", err_code)
-              << std::format("err msg: {}\n",
-                             std::system_category().message((int)err_code));
+              << std::format("err msg: {}\n", std::system_category().message((int)err_code));
     return EXIT_FAILURE;
   }
 
@@ -100,8 +100,7 @@ auto main() -> int {
   if (::listen(listen_socket, SOMAXCONN) != 0) {
     auto err_code = ::WSAGetLastError();
     std::cerr << std::format("listen failed: {}\n", err_code)
-              << std::format("err msg: {}\n",
-                             std::system_category().message((int)err_code));
+              << std::format("err msg: {}\n", std::system_category().message((int)err_code));
     return EXIT_FAILURE;
   }
 
@@ -119,16 +118,13 @@ auto main() -> int {
     auto ov = LPOVERLAPPED{nullptr};
 
     // 하나의 구조체를 만들던 아니면 클래스를 하나 만들던 하면 좋을거 같긴하군
-    if (not::GetQueuedCompletionStatus(clients.iocp_handle, &bytes_transferred,
-                                       &compeletion_key, &ov, INFINITE)) {
+    if (not::GetQueuedCompletionStatus(clients.iocp_handle, &bytes_transferred, &compeletion_key, &ov, INFINITE)) {
       auto err_code = ::GetLastError();
       if (err_code == WAIT_TIMEOUT) {
         continue;
       } else {
-        std::cerr << std::format("GetQueuedCompletionStatus failed: {}\n",
-                                 err_code)
-                  << std::format("err msg: {}\n",
-                                 std::system_category().message((int)err_code));
+        std::cerr << std::format("GetQueuedCompletionStatus failed: {}\n", err_code)
+                  << std::format("err msg: {}\n", std::system_category().message((int)err_code));
         auto socket = std::bit_cast<SOCKET>(compeletion_key);
         clients.clients[socket].state = Server_State::DISCONNECT;
       }
@@ -136,14 +132,15 @@ auto main() -> int {
 
     auto ovex = std::bit_cast<OverlappedEx *>(ov);
     auto socket = std::bit_cast<SOCKET>(compeletion_key);
-    
+
     std::cout << "Iotype: " << (int)ovex->iotype << "\n";
     std::cout << "Socket: " << (int)socket << "\n";
 
     switch (program_state) {
     case Program_State::RUN:
       if (ovex->iotype == Iotype::ACCPET) {
-        AddClient(clients, socket);
+        std::cout << "ss" << "\n";
+        AddClient(clients, ovex->accept_socket);
         accept_manager.handle_accept(bytes_transferred, ov);
       } else {
         ServerIo(clients, socket, bytes_transferred, ov);
