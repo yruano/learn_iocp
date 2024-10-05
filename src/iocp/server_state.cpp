@@ -16,6 +16,7 @@ auto ServerDisconnect(Clients &clients, SOCKET socket) -> void {
   }
 }
 
+// TcpRecv이런 사용할 때는 무조건 new를 사용해야한다 실행이 끝날때 까지 사라있어야함
 auto ServerRead(Client &client, Clients &clients) -> void {
   client.state = Server_State::WRITE;
   auto r = new TcpRecv{};
