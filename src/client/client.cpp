@@ -113,26 +113,8 @@ auto main() -> int {
       }
     }
 
-    switch (state) {
-      case Client_State::READ: {
-        ClientRead(client, state);
-        break;
-      }
-      case Client_State::WRITE: {
-        ClientWrite(client, state);
-        break;
-      }
-      case Client_State::CONNECT:
-        break;
-      
-      case Client_State::DISCONNECT:
-        closesocket(client.socket);
-        run_client = false;
-        break;
-      
-      default:
-        break;
-    }
+    clientIo(state, client, run_client);
+
     // IOCP 완료됨
     auto ovex = std::bit_cast<OverlappedEx *>(ov);
     delete ovex->op;

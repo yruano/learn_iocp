@@ -16,5 +16,6 @@ struct Client {
   std::vector<char> send_buf = std::vector<char>(1000, 0);
 };
 
-auto ClientRead(Client &client, Client_State &state) -> void;
-auto ClientWrite(Client &client, Client_State &state) -> void;
+auto clientRead(Client &client, Client_State &state) -> void;
+auto clientWrite(Client &client, Client_State &state) -> void;
+auto clientIo(Client_State state, Client &client, bool &run_client) -> void;
