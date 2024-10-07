@@ -139,7 +139,7 @@ auto main() -> int {
     case Program_State::RUN:
       if (ovex->iotype == Iotype::ACCPET) {
         AddClient(clients, ovex->accept_socket);
-        accept_manager.handle_accept(bytes_transferred, ov);
+        accept_manager.handle_accept(bytes_transferred, ov, clients.clients.size());
       } else {
         ServerIo(clients, socket, bytes_transferred, ov);
       }

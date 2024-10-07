@@ -16,5 +16,5 @@ public:
   ~AcceptManager();
 
   bool start_accept();
-  void handle_accept(DWORD bytes_transferred, LPOVERLAPPED overlapped);
+  void handle_accept(DWORD bytes_transferred, LPOVERLAPPED overlapped, int size);
 };
