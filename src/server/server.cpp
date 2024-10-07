@@ -1,12 +1,11 @@
 #include <cstdlib>
 #include <format>
 #include <iostream>
-#include <string>
 
 #include "../defer.hpp"
-#include "../iocp/accept_manager.hpp"
+#include "../manager/accept_manager.hpp"
 #include "../iocp/iocp.hpp"
-#include "../iocp/server_state.hpp"
+#include "../manager/server_manager.hpp"
 
 // IOCP 최적화 팁
 // https://yamoe.tistory.com/421
@@ -139,7 +138,6 @@ auto main() -> int {
     switch (program_state) {
     case Program_State::RUN:
       if (ovex->iotype == Iotype::ACCPET) {
-        std::cout << "ss" << "\n";
         AddClient(clients, ovex->accept_socket);
         accept_manager.handle_accept(bytes_transferred, ov);
       } else {

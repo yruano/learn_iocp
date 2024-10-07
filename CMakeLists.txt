@@ -55,10 +55,10 @@ set(SERVER_SOURCES
   src/defer.hpp
   src/iocp/iocp.hpp
   src/iocp/iocp.cpp
-  src/iocp/server_state.hpp
-  src/iocp/server_state.cpp
-  src/iocp/accept_manager.hpp
-  src/iocp/accept_manager.cpp
+  src/manager/server_manager.hpp
+  src/manager/server_manager.cpp
+  src/manager/accept_manager.hpp
+  src/manager/accept_manager.cpp
 )
 
 set(CLIENT_SOURCES
@@ -66,8 +66,8 @@ set(CLIENT_SOURCES
   src/defer.hpp 
   src/iocp/iocp.hpp
   src/iocp/iocp.cpp
-  src/iocp/client_state.hpp
-  src/iocp/client_state.cpp
+  src/manager/client_manager.hpp
+  src/manager/client_manager.cpp
 )
 
 # 서버 실행 파일 생성
