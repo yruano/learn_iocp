@@ -40,6 +40,7 @@ auto ServerWrite(Client &sender_client, Clients &clients, HANDLE iocp_handle) ->
     sender_client.state = Server_State::READ;
     for (auto &[socket, client] : clients.clients) {
       if (client.socket != sender_client.socket) {
+        std::cout << sender_client.c_buf.data() << "\n";
         auto sender = new TcpSend{};
         if (!sender->send(client.socket, sender_client.c_buf)) {
           auto err_code = ::WSAGetLastError();

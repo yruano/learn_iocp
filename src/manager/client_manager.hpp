@@ -18,4 +18,4 @@ struct Client {
 
 auto clientRead(Client &client, Client_State &state) -> void;
 auto clientWrite(Client &client, Client_State &state) -> void;
-auto clientIo(Client_State state, Client &client, bool &run_client) -> void;
+auto clientIo(Client_State &state, Client &client, bool &run_client) -> void;

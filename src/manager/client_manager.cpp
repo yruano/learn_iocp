@@ -27,7 +27,7 @@ auto clientWrite(Client &client, Client_State &state) -> void {
   state = Client_State::READ;
 }
 
-auto clientIo(Client_State state, Client &client, bool &run_client) -> void {
+auto clientIo(Client_State &state, Client &client, bool &run_client) -> void {
   switch (state) {
   case Client_State::READ: {
     clientRead(client, state);
